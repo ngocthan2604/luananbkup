@@ -93,18 +93,6 @@ function Home() {
             <div className={style.containers}>
                 <img src='https://portals.petrolimex.com.vn/_themes/sunrise/img/industry-cta-1.jpg' className={style.imageSlider} alt='alt' />
             </div>
-
-            <div className={style.LearnMoreAboutUs}>
-                <div className={style.LearnMoreAboutUsWarpper}>
-                    <div className={style.LearnMoreAboutUsTitle}>Hiểu thêm về chúng tôi</div>
-                    <div className={style.btnWarpper}>
-                        {ablutMe.map((item, index) => (
-                            <button key={index} className={style.customBtn} onClick={(e)=>handleViewMorePage(index,e)}>{item}</button>
-                        ))}
-                    </div>
-                </div>
-            </div>
-            
             <div className={style.introduceWarrper}>
                 <div className={style.introduceLeft}>
                     <h2 className={style.introduceLeftTitle}>
@@ -176,7 +164,16 @@ function Home() {
                 </div>
             </div>
 
-            
+            <div className={style.LearnMoreAboutUs}>
+                <div className={style.LearnMoreAboutUsWarpper}>
+                    <div className={style.LearnMoreAboutUsTitle}>Hiểu thêm về chúng tôi</div>
+                    <div className={style.btnWarpper}>
+                        {ablutMe.map((item, index) => (
+                            <button key={index} className={style.customBtn} onClick={(e)=>handleViewMorePage(index,e)}>{item}</button>
+                        ))}
+                    </div>
+                </div>
+            </div>
             <div className={style.newWarpper}>
                 <div className={style.newTitle}>Tin Tức</div>
                 <div className={style.newDetail}>
