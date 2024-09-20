@@ -22,7 +22,11 @@ import {
   handleGetUserById,
   handleEdittUserById,
   handleCreateReport,
-  handleLogoutUser
+  handleLogoutUser,
+  handleGetAllProducts,
+  handleCreateProduct,
+  handleUpdateProduct, 
+  handleDeleteProduct 
 } from '../controllers/useController'
 
 ///// router
@@ -68,6 +72,11 @@ let initWebRoutes = (app) => {
   router.get('/api-get-use-of-id', useCheckErrorToken, handleGetUserById)
   router.put('/api-edit-user', useCheckErrorToken, handleEdittUserById)
   router.post('/api-create-report', useCheckErrorToken, handleCreateReport)
+
+  router.get('/api-get-all-products', useCheckErrorToken, handleGetAllProducts);
+  router.post('/api-create-product', useCheckErrorToken, handleCreateProduct);
+  router.put('/api-update-product/:id', useCheckErrorToken, handleUpdateProduct);
+  router.delete('/api-delete-product/:id', useCheckErrorToken, handleDeleteProduct);
 
   return app.use("/", router);
 };

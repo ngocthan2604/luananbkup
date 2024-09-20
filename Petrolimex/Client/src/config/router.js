@@ -11,6 +11,7 @@ const routes = {
     timekeeping: '/timekeeping',
     salary: '/salary',
     report: '/report',
+    product: '/product',
     /// profile
 
     profile: '/profile',

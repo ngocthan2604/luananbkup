@@ -53,6 +53,12 @@ const menus = [
         role: true,
         router: config.routes.ofTheChief
     },
+    {
+        id: 6,
+        name: 'Sản Phẩm',
+        role: true,
+        router: config.routes.product
+    },
 ];
 
 function Header() {

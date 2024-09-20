@@ -20,6 +20,7 @@ import Introduce from '@/pages/Introduce';
 import Activity from '@/pages/Activity';
 import Brand from '@/pages/Brand';
 import Information from '@/pages/Information';
+import Product from '@/pages/Product';
 
 const publicRoutes = [
     { path: config.routes.home, component: Home, layout: DefaultLayout },
@@ -93,6 +94,14 @@ const privateRoutes = [
         id: 8,
         path: config.routes.editUser,
         component: EditUsers,
+        layout: null,
+        role: null,
+        isRole: true,
+    },
+    {
+        id: 9,
+        path: config.routes.product,
+        component: Product,
         layout: null,
         role: null,
         isRole: true,

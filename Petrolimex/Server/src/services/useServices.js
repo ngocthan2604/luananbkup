@@ -655,6 +655,118 @@ const handleServiceCreateReport = (reportFile, userId) => {
     });
 }
 
+const handleServiceGetAllProducts = () => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const allProducts = await db.Product.findAll({
+                attributes: [
+                    "id",
+                    "product_name",
+                    "unit_price",
+                    "stock_level",
+                    "description",
+                    "createdAt",
+                    "updatedAt"
+                ],
+                order: [["id", "ASC"]],
+                raw: false,
+                nest: true,
+            });
+            resolve({
+                statusCode: 200,
+                data: allProducts,
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+// Tạo sản phẩm
+const handleServiceCreateProduct = (productData) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const newProduct = await db.Product.create({
+                product_name: productData.product_name,
+                unit_price: productData.unit_price,
+                stock_level: productData.stock_level,
+                description: productData.description
+            });
+            resolve({
+                statusCode: 201,
+                message: "Thêm sản phẩm thành công",
+                data: newProduct,
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
+
+// Cập nhật sản phẩm
+const handleServiceUpdateProduct = (id, productData) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Sử dụng phương thức update của Sequelize để cập nhật trực tiếp
+            const updatedProduct = await db.Product.update(
+                {
+                    product_name: productData.product_name,
+                    unit_price: productData.unit_price,
+                    stock_level: productData.stock_level,
+                    description: productData.description,
+                },
+                {
+                    where: { id: id },
+                    returning: true,  // Tùy chọn này trả về sản phẩm đã cập nhật
+                    plain: true,      // Giảm về 1 đối tượng thay vì mảng
+                }
+            );
+
+            if (!updatedProduct) {
+                return resolve({
+                    statusCode: 404,
+                    message: "Product not found",
+                });
+            }
+
+            resolve({
+                statusCode: 200,
+                message: "Product updated successfully",
+                data: updatedProduct[1], // Trả về sản phẩm đã cập nhật
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
+
+
+// Xóa sản phẩm
+const handleServiceDeleteProduct = (id) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Xóa trực tiếp dựa trên điều kiện where
+            const result = await db.Product.destroy({
+                where: { id: id },
+            });
+
+            if (result === 0) {
+                return resolve({
+                    statusCode: 404,
+                    message: "Product not found",
+                });
+            }
+
+            resolve({
+                statusCode: 200,
+                message: "Product deleted successfully",
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
+
 module.exports = {
     handleServiceGetAllUser,
     handleServiceLoginUser,
@@ -675,5 +787,9 @@ module.exports = {
     handleServiceGetUserById,
     handleServiceEditUsersById,
     handleServiceCreateReport,
-    handleServiceLogoutUser
+    handleServiceLogoutUser,
+    handleServiceGetAllProducts,
+    handleServiceCreateProduct,
+    handleServiceUpdateProduct,
+    handleServiceDeleteProduct
 }

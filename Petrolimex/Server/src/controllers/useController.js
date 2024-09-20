@@ -16,7 +16,11 @@ import {
     handleServiceGetUserById,
     handleServiceEditUsersById,
     handleServiceLogoutUser,
-    handleServiceCreateReport
+    handleServiceCreateReport,
+    handleServiceGetAllProducts,
+    handleServiceCreateProduct,
+    handleServiceUpdateProduct,
+    handleServiceDeleteProduct
 } from '../services/useServices'
 
 const handleGetAllUser = async (req, res) => {
@@ -267,6 +271,53 @@ const handleCreateReport = async (req, res) => {
     }
 }
 
+// Lấy toàn bộ dư liệu
+const handleGetAllProducts = async (req, res) => {
+    try {
+        const data = await handleServiceGetAllProducts();
+        return res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+// Tạo sản phẩm
+const handleCreateProduct = async (req, res) => {
+    try {
+        const data = await handleServiceCreateProduct(req.body);
+        return res.status(201).json(data);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+// Cập nhật sản phẩm
+const handleUpdateProduct = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const data = await handleServiceUpdateProduct(id, req.body);
+        return res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+// Xóa sản phẩm
+const handleDeleteProduct = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const data = await handleServiceDeleteProduct(id);
+        return res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+
 module.exports = {
     handleGetAllUser,
     handleLoginUser,
@@ -287,5 +338,9 @@ module.exports = {
     handleGetUserById,
     handleEdittUserById,
     handleCreateReport,
-    handleLogoutUser
+    handleLogoutUser,
+    handleGetAllProducts,
+    handleCreateProduct,
+    handleUpdateProduct,
+    handleDeleteProduct
 }
