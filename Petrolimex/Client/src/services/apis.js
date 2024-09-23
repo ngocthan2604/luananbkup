@@ -90,3 +90,23 @@ export const apiEditUserById = (users) => {
 export const apiCreateReport = (reportFile) => {
     return api.post('/api-create-report', reportFile)
 }
+
+// Lấy danh sách tất cả sản phẩm
+export const apiGetAllProducts = () => {
+    return api.get('/api-get-all-products');
+};
+
+// Tạo một sản phẩm mới
+export const apiCreateProduct = (product) => {
+    return api.post('/api-create-product', product);
+};
+
+// Cập nhật sản phẩm
+export const apiEditProduct = (productId, editProduct) => {
+    return api.put(`/api-update-product/${productId}`, editProduct);
+};
+
+// Xóa sản phẩm
+export const apiDeleteProduct = (productId) => {
+    return api.delete(`/api-delete-product/${productId}`);
+};

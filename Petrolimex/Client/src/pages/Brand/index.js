@@ -1,10 +1,11 @@
 import style from './Brand.module.scss'
-import { useState } from 'react';
+import { useEffect, useState } from "react";
+import {apiGetAllProducts} from '@/services/apis'
 import {ArrowDropUp,ArrowRight,ArrowDropDown} from '@mui/icons-material'
 
 function Brand() {
     const [isVisible, setIsVisible] = useState(false);
-
+    const [products, setProducts] = useState([]);
     const menuBar = [
         {
             image:'https://portals.petrolimex.com.vn/_themes/sunrise/img/ctaPageLink-2.png',
@@ -48,42 +49,25 @@ function Brand() {
         }
     ]
 
-    const pricePetro=[
-        {
-            name:'Xăng RON 95-V',
-            price1:'23.410	',
-            price2:'23.870'
-        },
-        {
-            name:'Xăng RON 95-III',
-            price1:'22.880	',
-            price2:'23.330'
-        },
-        {
-            name:'Xăng E5 RON 92-II',
-            price1:'21.900	',
-            price2:'22.330'
-        },
-        {
-            name:'DO 0,001S-V',
-            price1:'20.390	',
-            price2:'20.790'
-        },
-        {
-            name:'DO 0,05S-II',
-            price1:'20.190	',
-            price2:'20.590'
-        },
-        {
-            name:'Dầu hỏa 2-K',
-            price1:'20.320	',
-            price2:'20.720'
-        }
-    ]
-
     const toggleVisibility = () => {
         setIsVisible(!isVisible);
     };
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const response = await apiGetAllProducts();
+                setProducts(response.data.data);
+            } catch (error) {
+                console.log("Error fetching products:", error);
+            }
+        };
+        fetchProducts();
+    }, []);
+
+    const latestProduct = products.reduce((latest, product) => {
+        return new Date(product.updatedAt) > new Date(latest.updatedAt) ? product : latest;
+    }, products[0]);
 
     return (
         <div>
@@ -177,18 +161,22 @@ function Brand() {
                         <table className={style.tablePrice}>
                             <tr>
                                 <th>Sản phẩm</th>
-                                <th>Vùng 1</th>
-                                <th>Vùng 2</th>
+                                <th>Đơn Giá</th>
                             </tr>
-                            {pricePetro.map((item,i)=>(
+                            {products.map((item,i)=>(
                                 <tr key={i}>
-                                    <td>{item.name}</td>
-                                    <td>{item.price1}</td>
-                                    <td>{item.price2}</td>
+                                    <td>{item.product_name}</td>
+                                    <td>{parseFloat(item.unit_price).toFixed(2)}</td>
                                 </tr>
                             ))}
                         </table>
-                        <p>Giá của Petrolimex cập nhật lúc  15:00 - 25/7/2024</p>
+                        <p>
+                            Giá của Petrolimex cập nhật lúc {latestProduct ? 
+                            new Date(latestProduct.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+                            : 'N/A'} - {latestProduct ? 
+                            new Date(latestProduct.updatedAt).toLocaleDateString() 
+                            : 'N/A'}
+                        </p>
                         <span>*đơn vị: VND</span>
                     </div>    
                     <div className={style.location}>
