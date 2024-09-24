@@ -204,27 +204,56 @@ const handleGetAllNotification = async (req, res) => {
 
 const handleCreateSale = async (req, res) => {
     try {
-        const userId = req.userId;
-        const sales = req.body;
-        const data = await handleServiceCreateSale(userId, sales);
-        return res.status(200).json(data);
+        const userId = req.userId;  // Lấy userId từ thông tin người dùng đang đăng nhập
+        if (!userId) {
+            return res.status(401).json({
+                statusCode: 1,
+                message: "Người dùng chưa được xác thực"
+            });
+        }
+        
+        const data = req.body;  // Dữ liệu từ request body
+
+        // Gọi service để xử lý việc tạo bản ghi sale
+        const response = await handleServiceCreateSale(data, userId);
+
+        if (response.statusCode === 2) {
+            return res.status(201).json({
+                statusCode: 2,
+                message: response.message,
+            });
+        } else {
+            return res.status(400).json({
+                statusCode: 1,
+                message: response.message,
+            });
+        }
     } catch (error) {
-        console.log(error);
-        return res.status(200).json(error.message);
+        console.error('Lỗi trong createSaleController:', error);
+        return res.status(500).json({
+            statusCode: 1,
+            message: 'Có lỗi xảy ra, không thể tạo báo cáo',
+        });
     }
-}
+};
 
 const handleGetAllSale = async (req, res) => {
     try {
         const userId = req.userId;
         const roleId = req.query?.roleId;
+
         const data = await handleServiceGetAllSale(userId, roleId);
-        return res.status(200).json(data);
+
+        if (data.statusCode === 2) {
+            return res.status(200).json({ statusCode: 2, data: data.data });
+        } else {
+            return res.status(400).json({ statusCode: data.statusCode, message: data.message });
+        }
     } catch (error) {
-        console.log(error);
-        return res.status(200).json(error.message);
+        console.error(error);
+        return res.status(500).json({ message: error.message });
     }
-}
+};
 
 const handleResetSales = async (req, res) => {
     try {

@@ -10,22 +10,13 @@ module.exports = {
                 type: Sequelize.INTEGER,
             },
             userId: {
-                type: Sequelize.STRING,
-            },
-            day_for_sale: {
-                type: Sequelize.STRING,
-            },
-            sales_figures_day: {
-                type: Sequelize.STRING,
-            },
-            sales_figures_month: {
-                type: Sequelize.STRING,
-            },
-            price: {
-                type: Sequelize.STRING,
-            },
-            time: {
-                type: Sequelize.STRING,
+                type: Sequelize.INTEGER,
+                references: {
+                    model: 'users', // name of the target table
+                    key: 'id' // key in the target table
+                },
+                onUpdate: 'CASCADE',
+                onDelete: 'SET NULL',
             },
             problem: {
                 type: Sequelize.STRING,
@@ -33,7 +24,6 @@ module.exports = {
             file: {
                 type: Sequelize.BLOB,
             },
-
             createdAt: {
                 allowNull: false,
                 type: Sequelize.DATE,
@@ -41,6 +31,22 @@ module.exports = {
             updatedAt: {
                 allowNull: false,
                 type: Sequelize.DATE,
+            },
+            date: {
+                type: Sequelize.STRING,
+            },
+            quantity: {
+                type: Sequelize.DECIMAL(10, 2),
+                allowNull: false,
+            },
+            product_id: {
+                type: Sequelize.INTEGER,
+                references: {
+                    model: 'products', // name of the target table
+                    key: 'id' // key in the target table
+                },
+                onUpdate: 'CASCADE',
+                onDelete: 'CASCADE',
             },
         });
     },

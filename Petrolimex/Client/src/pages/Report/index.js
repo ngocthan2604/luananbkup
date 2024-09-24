@@ -17,7 +17,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 
-import { apiCreateSales, apiGetAllSales, apiGetProfileUser, apiResetSales, apiCreateReport } from "@/services/apis";
+import { apiCreateSales, apiGetAllSales, apiGetProfileUser, apiResetSales, apiCreateReport ,apiGetAllProducts} from "@/services/apis";
 
 import { TIME_RESET } from "@/environment";
 
@@ -25,12 +25,14 @@ function Report() {
     const [open, setOpen] = useState(false);
     const [roleId, setRoleId] = useState(null);
     const [listSales, setListSales] = useState(null)
-    const schema = yup.object().shape({
-        time: yup.string().required("Time is Required!"),
-        size: yup.string().required("Size is Required!"),
-        price: yup.string().default('25'),
-        problem: null,
+    const [products, setProducts] = useState([]);
 
+    const schema = yup.object().shape({
+        time: yup.string().required("Trường này không được bỏ trống!"),
+        problem: yup.string().required("Trường này không được bỏ trống!"),
+        quantities: yup.array().of(
+            yup.number().typeError("Phải là số!").min(0, "Không được nhỏ hơn 0")
+        )
     });
 
     const {
@@ -60,9 +62,23 @@ function Report() {
         })()
     }, [roleId, open])
 
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const response = await apiGetAllProducts();
+                setProducts(response.data.data);
+                console.log(response)
+            } catch (error) {
+                console.log("Error fetching products:", error);
+            }
+        };
+        fetchProducts();
+    }, []);
+
     const onSubmit = async (data) => {
-        if (data) {
-            const response = await apiCreateSales(data)
+        console.log("Submitting data:", data);
+        try {
+            const response = await apiCreateSales(data);
             if (response?.data?.statusCode === 2) {
                 toast.success('Tạo Báo Cáo Thành Công', {
                     position: "top-right",
@@ -74,9 +90,14 @@ function Report() {
                     progress: undefined,
                     theme: "light",
                 });
+                setOpen(false);  // Đóng modal sau khi thành công
+                reset(); // Reset form
+            } else {
+                toast.error('Lỗi tạo báo cáo!');
             }
-            setOpen(false);
-            reset();
+        } catch (error) {
+            toast.error('Có lỗi xảy ra từ server!');
+            console.error("Error:", error);
         }
     };
 
@@ -176,7 +197,9 @@ function Report() {
                             // border: '2px solid #000',
                             boxShadow: 24,
                             p: 4,
-                            borderRadius: '5px'
+                            borderRadius: '5px',
+                            maxHeight: '80%',
+                            overflowY: 'auto'
                         }}>
                             <h2>Báo Cáo Doanh Số</h2>
                             <form onSubmit={handleSubmit(onSubmit)}>
@@ -189,30 +212,23 @@ function Report() {
                                     />
                                     <p className={style.errorReport}>{errors.time?.message}</p>
                                 </div>
-                                <div className={style.formGroup}>
-                                    <span>Số Lượng</span><br />
-                                    <input
-                                        className={style.inputReport}
-                                        placeholder="Số Lít Xăng" {...register("size")}
-                                        type="number"
-                                    />
-                                    <p className={style.errorReport}>{errors.size?.message}</p>
-                                </div>
-                                <div className={style.formGroup}>
-                                    <span>Đơn Giá</span><br />
-                                    <input
-                                        className={style.inputReport}
-                                        placeholder="Giá" {...register("price")}
-                                        type="number"
-                                        value='25000'
-                                    />
-                                    <p className={style.errorReport}>{errors.price?.message}</p>
-                                </div>
+                                {products.map((product, index) => (
+                                    <div key={product.id} className={style.formGroup}>
+                                        <span>{product.product_name}</span><br />
+                                        <input
+                                            className={style.inputReport}
+                                            placeholder={`Số lượng ${product.product_name}`}
+                                            {...register(`quantities[${index}]`)} 
+                                            type="number"
+                                        />
+                                        <p className={style.errorReport}>{errors.quantities?.[index]?.message}</p>
+                                    </div>
+                                ))}
                                 <div className={style.formGroup}>
                                     <span>Ghi Chú</span><br />
                                     <textarea
                                         className={style.inputReport}
-                                        placeholder="Vấn đề của quán" {...register("problem", { validate: false })}
+                                        placeholder="Vấn đề của quán" {...register("problem")}
                                     />
                                 </div>
                                 <div className={style.modalFooter}>
@@ -244,26 +260,21 @@ function Report() {
                                     <tr>
                                         <th>STT</th>
                                         <th>Ngày Bán</th>
+                                        <th>Tên Sản Phẩm</th>
                                         <th>Số Xăng Bán Được(lít)</th>
                                         <th>Đơn Giá</th>
                                         <th>Thành Tiền</th>
                                     </tr>
-                                    {
-                                        listSales && listSales.map((sale, index) => {
-                                            return (
-                                                < tr key={sale.id}>
-                                                    <td>{index + 1}</td>
-                                                    <td>{sale?.day_for_sale}</td>
-                                                    {/* <td>{sale?.price}</td> */}
-                                                    {/* <td>{sale?.sales_figures_day * sale?.price} vnd</td> */}
-                                                    <td>{sale?.sales_figures_day}</td>
-                                                    <td>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(sale?.price)}</td>
-                                                    <td>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(sale?.sales_figures_day * sale?.price)}</td>
-                                                </tr>
-                                            )
-                                        })
-                                    }
-
+                                    {listSales && listSales.map((sale, index) => (
+                                        <tr key={index}>
+                                            <td>{sale.stt}</td>
+                                            <td>{sale.date}</td>
+                                            <td>{sale.productName}</td>
+                                            <td>{sale.quantity}</td>
+                                            <td>{sale.unitPrice}</td>
+                                            <td>{sale.totalPrice}</td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                         </div>

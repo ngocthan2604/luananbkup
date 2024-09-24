@@ -426,39 +426,128 @@ const handleServiceGetAllNotification = (userId, role) => {
     });
 }
 
-const handleServiceCreateSale = (userId, sales) => {
+// const handleServiceCreateSale = async (data, userId) => {
+//     return new Promise(async (resolve, reject) => {
+//         try {
+//             // Kiểm tra dữ liệu đầu vào
+//             if (!data || !data.time || Object.keys(data).length === 0) {
+//                 return resolve({ statusCode: 400, message: 'Dữ liệu không hợp lệ' });
+//             }
+
+//             const { time, problem, ...quantities } = data; // Lấy các trường từ dữ liệu gửi lên
+//             const products = await db.Product.findAll(); // Lấy danh sách sản phẩm
+
+//             if (!products.length) {
+//                 return resolve({ statusCode: 404, message: 'Không tìm thấy sản phẩm' });
+//             }
+
+//             const salesPromises = products.map(async (product) => {
+//                 const quantityField = `quantity_${product.id}`; // Trường số lượng tương ứng với product_id
+
+//                 if (quantities[quantityField]) {
+//                     await db.Sales.create({
+//                         userId,
+//                         product_id: product.id,
+//                         date: time,
+//                         quantity: quantities[quantityField],
+//                         problem: problem || "",
+//                         createdAt: new Date(),
+//                         updatedAt: new Date(),
+//                     });
+//                 }
+//             });
+
+//             await Promise.all(salesPromises);
+//             resolve({ statusCode: 2, message: 'Tạo báo cáo thành công' });
+//         } catch (error) {
+//             console.error('Lỗi khi tạo báo cáo:', error);
+//             reject({ statusCode: 500, message: 'Lỗi khi tạo báo cáo: ' + error.message });
+//         }
+//     });
+// };
+
+const handleServiceCreateSale = async (data, userId) => {
     return new Promise(async (resolve, reject) => {
         try {
-            await db.Sales.create({
-                userId: userId,
-                day_for_sale: sales.time,
-                price: sales.price,
-                sales_figures_day: sales.size
-            })
-            resolve({ statusCode: 2, message: "create sale successful" });
+            if (!data || !data.time || Object.keys(data).length === 0) {
+                return resolve({ statusCode: 400, message: 'Dữ liệu không hợp lệ' });
+            }
 
+            const { time, problem, quantities } = data; 
+            
+            if (!Array.isArray(quantities) || quantities.length === 0) {
+                return resolve({ statusCode: 400, message: 'Số lượng không hợp lệ' });
+            }
+
+            const products = await db.Product.findAll(); 
+
+            if (!products.length) {
+                return resolve({ statusCode: 404, message: 'Không tìm thấy sản phẩm' });
+            }
+
+            const salesPromises = products.map(async (product, index) => {
+                const quantity = quantities[index]; 
+
+                if (quantity !== undefined) { 
+                    await db.Sales.create({
+                        userId,
+                        product_id: product.id,
+                        date: time,
+                        quantity: quantity,
+                        problem: problem || "",
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    });
+                }
+            });
+
+            await Promise.all(salesPromises);
+            resolve({ statusCode: 2, message: 'Tạo báo cáo thành công' });
         } catch (error) {
-            reject(error);
+            console.error('Lỗi khi tạo báo cáo:', error);
+            reject({ statusCode: 500, message: 'Lỗi khi tạo báo cáo: ' + error.message });
         }
     });
-}
+};
 
 const handleServiceGetAllSale = (userId, roleId) => {
     return new Promise(async (resolve, reject) => {
         try {
             if (roleId === "R1" || roleId === 'R2') {
-                const allSales = await db.Sales.findAll()
-                if (allSales) {
-                    resolve({ statusCode: 2, data: allSales });
+                const allSales = await db.Sales.findAll({
+                    include: [
+                        {
+                            model: db.Product, // Liên kết với bảng Product
+                            attributes: ['product_name', 'unit_price'],
+                        }
+                    ],
+                    order: [['createdAt', 'DESC']],
+                    raw: true, // Thêm raw: true để nhận được dữ liệu dưới dạng plain object
+                    nest: true, // Nesting để giữ cấu trúc quan hệ giữa bảng Sales và Product
+                });
+
+                if (allSales.length > 0) {
+                    const salesReport = allSales.map((sale, index) => ({
+                        stt: index + 1,
+                        date: sale.date,
+                        productName: sale.Product.product_name || 'Unknown',
+                        quantity: sale.quantity,
+                        unitPrice: sale.Product.unit_price || 0,
+                        totalPrice: (sale.quantity * sale.Product.unit_price || 0).toFixed(2),
+                    }));
+
+                    resolve({ statusCode: 2, data: salesReport });
+                } else {
+                    resolve({ statusCode: 404, message: 'Không có dữ liệu bán hàng' });
                 }
             } else {
-                resolve({ statusCode: 4, message: 'can not role' });
+                resolve({ statusCode: 403, message: 'Không có quyền truy cập' });
             }
         } catch (error) {
             reject(error);
         }
     });
-}
+};
 
 // let cronJob = null;
 // const startScheduledReset = (timeInSeconds) => {
@@ -742,10 +831,39 @@ const handleServiceUpdateProduct = (id, productData) => {
 
 
 // Xóa sản phẩm
-const handleServiceDeleteProduct = (id) => {
+// const handleServiceDeleteProduct = (id) => {
+//     return new Promise(async (resolve, reject) => {
+//         try {
+//             // Xóa trực tiếp dựa trên điều kiện where
+//             const result = await db.Product.destroy({
+//                 where: { id: id },
+//             });
+
+//             if (result === 0) {
+//                 return resolve({
+//                     statusCode: 404,
+//                     message: "Product not found",
+//                 });
+//             }
+
+//             resolve({
+//                 statusCode: 200,
+//                 message: "Product deleted successfully",
+//             });
+//         } catch (error) {
+//             reject(error);
+//         }
+//     });
+// };
+const handleServiceDeleteProduct = async (id) => {
     return new Promise(async (resolve, reject) => {
         try {
-            // Xóa trực tiếp dựa trên điều kiện where
+            // Xóa tất cả các bản ghi liên quan trong bảng sales
+            await db.Sales.destroy({
+                where: { product_id: id },
+            });
+
+            // Sau đó xóa sản phẩm dựa trên điều kiện where
             const result = await db.Product.destroy({
                 where: { id: id },
             });
@@ -762,7 +880,11 @@ const handleServiceDeleteProduct = (id) => {
                 message: "Product deleted successfully",
             });
         } catch (error) {
-            reject(error);
+            console.error('Lỗi khi xóa sản phẩm:', error);
+            reject({
+                statusCode: 500,
+                message: 'Có lỗi xảy ra khi xóa sản phẩm: ' + error.message,
+            });
         }
     });
 };
