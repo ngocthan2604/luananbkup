@@ -26,6 +26,7 @@ function Report() {
     const [roleId, setRoleId] = useState(null);
     const [listSales, setListSales] = useState(null)
     const [products, setProducts] = useState([]);
+    const [isDataDeleted, setIsDataDeleted] = useState(false);
 
     const schema = yup.object().shape({
         time: yup.string().required("Trường này không được bỏ trống!"),
@@ -110,56 +111,105 @@ function Report() {
         reset();
     }
 
-    const exportToExcel = () => {
+    const exportToExcel = async () => {
         const data = listSales.map((sale, index) => {
-            const formattedDate = formatDate(sale.day_for_sale);// Chuyển đổi ngày tháng thành đối tượng Date
+            const formattedDate = formatDate(sale.date); // Định dạng lại ngày
             return {
                 'STT': index + 1,
-                'Ngày Bán': formattedDate, // Định dạng lại ngày tháng
-                'Số Xăng Bán Được': sale.sales_figures_day,
-                'Đơn Giá': sale.price,
-                'Thành Tiền': sale.sales_figures_day * sale.price + ' vnd'
+                'Ngày Bán': formattedDate, // Định dạng lại ngày bán
+                'Tên Sản Phẩm': sale.productName, // Lấy tên sản phẩm
+                'Số Xăng Bán Được (lít)': sale.quantity.toString(), // Chuyển đổi số lượng thành chuỗi
+                'Đơn Giá': sale.unitPrice + ' VND', // Lấy đơn giá
+                'Thành Tiền': (sale.quantity * sale.unitPrice).toFixed(2) + ' VND' // Tính thành tiền
             };
         });
-
+    
+        // Tạo worksheet từ dữ liệu JSON
         const worksheet = XLSX.utils.json_to_sheet(data);
+    
+        // Tính chiều rộng cột tự động dựa trên nội dung
+        const columnWidths = Object.keys(data[0]).map(key => {
+            const maxWidth = Math.max(...data.map(item => String(item[key]).length));
+            return {
+                wch: key === 'Số Xăng Bán Được (lít)' ? maxWidth + 15 : maxWidth + 2 // Thêm thêm không gian cho cột số xăng
+            };
+        });
+    
+        // Thêm chiều rộng cho các cột vào worksheet
+        worksheet['!cols'] = columnWidths;
+    
+        // Thêm khung cho các ô
+        const borderStyle = {
+            top: { style: "thin" },
+            left: { style: "thin" },
+            bottom: { style: "thin" },
+            right: { style: "thin" }
+        };
+    
+        Object.keys(worksheet).forEach(cell => {
+            if (cell[0] === '!') return; // Bỏ qua meta keys
+            worksheet[cell].s = { border: borderStyle }; // Áp dụng border cho từng ô
+        });
+    
+        // Tạo một workbook mới
         const workbook = XLSX.utils.book_new();
+    
+        // Thêm worksheet vào workbook
         XLSX.utils.book_append_sheet(workbook, worksheet, 'SalesData');
+    
+        // Xuất file Excel
         XLSX.writeFile(workbook, 'sales_data.xlsx');
-        saveExcelDb(JSON.stringify(workbook));
+    
+        // Gọi API để lưu vào database
+        await saveExcelDb(JSON.stringify(workbook));
     };
+    
+    // Hàm định dạng ngày
     const formatDate = (dateString) => {
         if (!dateString) {
             return '';
         }
-
+    
         const parsedDate = parse(dateString, 'dd/MM/yyyy', new Date());
-
+    
         if (isValid(parsedDate)) {
             return format(parsedDate, 'dd/MM/yyyy');
         } else {
             return ''; // Trả về chuỗi trống nếu ngày tháng không hợp lệ
         }
     };
-
+    
+    // Hàm lưu dữ liệu Excel vào DB
     const saveExcelDb = async (excel) => {
         if (excel) {
-            await apiCreateReport(excel)
+            try {
+                await apiCreateReport(excel); // Gọi API sau khi lưu file Excel
+            } catch (error) {
+                console.error('Error saving to database:', error);
+            }
         }
-    }
+    };              
 
     const ResetSales = async () => {
         const response = await apiResetSales({ TIME_RESET, isResetting: true })
         console.log(response)
         if (response?.data?.statusCode === 2) {
+            setIsDataDeleted(true);
+            toast.success('Dữ liệu đã được làm mới!', {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+            });
             const response = await apiResetSales({ TIME_RESET, isResetting: false })
             console.log(response);
         }
-        // setIsResetting(false)
-        // console.log(response?.data?.statusCode === 2)
     }
-    // console.log(isResetting);
-
+    
     return (
         <>
             <div className={style.warpper}>
@@ -265,7 +315,7 @@ function Report() {
                                         <th>Đơn Giá</th>
                                         <th>Thành Tiền</th>
                                     </tr>
-                                    {listSales && listSales.map((sale, index) => (
+                                    {!isDataDeleted && listSales && listSales.map((sale, index) => (
                                         <tr key={index}>
                                             <td>{sale.stt}</td>
                                             <td>{sale.date}</td>

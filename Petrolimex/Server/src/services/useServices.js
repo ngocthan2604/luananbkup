@@ -510,6 +510,44 @@ const handleServiceCreateSale = async (data, userId) => {
     });
 };
 
+// const handleServiceGetAllSale = (userId, roleId) => {
+//     return new Promise(async (resolve, reject) => {
+//         try {
+//             if (roleId === "R1" || roleId === 'R2') {
+//                 const allSales = await db.Sales.findAll({
+//                     include: [
+//                         {
+//                             model: db.Product, // Liên kết với bảng Product
+//                             attributes: ['product_name', 'unit_price'],
+//                         }
+//                     ],
+//                     order: [['createdAt', 'DESC']],
+//                     raw: true, // Thêm raw: true để nhận được dữ liệu dưới dạng plain object
+//                     nest: true, // Nesting để giữ cấu trúc quan hệ giữa bảng Sales và Product
+//                 });
+
+//                 if (allSales.length > 0) {
+//                     const salesReport = allSales.map((sale, index) => ({
+//                         stt: index + 1,
+//                         date: sale.date,
+//                         productName: sale.Product.product_name || 'Unknown',
+//                         quantity: sale.quantity,
+//                         unitPrice: sale.Product.unit_price || 0,
+//                         totalPrice: (sale.quantity * sale.Product.unit_price || 0).toFixed(2),
+//                     }));
+
+//                     resolve({ statusCode: 2, data: salesReport });
+//                 } else {
+//                     resolve({ statusCode: 404, message: 'Không có dữ liệu bán hàng' });
+//                 }
+//             } else {
+//                 resolve({ statusCode: 403, message: 'Không có quyền truy cập' });
+//             }
+//         } catch (error) {
+//             reject(error);
+//         }
+//     });
+// };
 const handleServiceGetAllSale = (userId, roleId) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -517,29 +555,26 @@ const handleServiceGetAllSale = (userId, roleId) => {
                 const allSales = await db.Sales.findAll({
                     include: [
                         {
-                            model: db.Product, // Liên kết với bảng Product
+                            model: db.Product,
                             attributes: ['product_name', 'unit_price'],
                         }
                     ],
                     order: [['createdAt', 'DESC']],
-                    raw: true, // Thêm raw: true để nhận được dữ liệu dưới dạng plain object
-                    nest: true, // Nesting để giữ cấu trúc quan hệ giữa bảng Sales và Product
+                    raw: true,
+                    nest: true,
                 });
 
-                if (allSales.length > 0) {
-                    const salesReport = allSales.map((sale, index) => ({
-                        stt: index + 1,
-                        date: sale.date,
-                        productName: sale.Product.product_name || 'Unknown',
-                        quantity: sale.quantity,
-                        unitPrice: sale.Product.unit_price || 0,
-                        totalPrice: (sale.quantity * sale.Product.unit_price || 0).toFixed(2),
-                    }));
+                // Trả về mảng rỗng nếu không có dữ liệu bán hàng
+                const salesReport = allSales.map((sale, index) => ({
+                    stt: index + 1,
+                    date: sale.date,
+                    productName: sale.Product.product_name || 'Unknown',
+                    quantity: sale.quantity,
+                    unitPrice: sale.Product.unit_price || 0,
+                    totalPrice: (sale.quantity * sale.Product.unit_price || 0).toFixed(2),
+                }));
 
-                    resolve({ statusCode: 2, data: salesReport });
-                } else {
-                    resolve({ statusCode: 404, message: 'Không có dữ liệu bán hàng' });
-                }
+                resolve({ statusCode: 2, data: salesReport.length > 0 ? salesReport : [] });
             } else {
                 resolve({ statusCode: 403, message: 'Không có quyền truy cập' });
             }
@@ -548,6 +583,7 @@ const handleServiceGetAllSale = (userId, roleId) => {
         }
     });
 };
+
 
 // let cronJob = null;
 // const startScheduledReset = (timeInSeconds) => {
