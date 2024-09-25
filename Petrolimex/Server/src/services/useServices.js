@@ -429,27 +429,31 @@ const handleServiceGetAllNotification = (userId, role) => {
 // const handleServiceCreateSale = async (data, userId) => {
 //     return new Promise(async (resolve, reject) => {
 //         try {
-//             // Kiểm tra dữ liệu đầu vào
 //             if (!data || !data.time || Object.keys(data).length === 0) {
 //                 return resolve({ statusCode: 400, message: 'Dữ liệu không hợp lệ' });
 //             }
 
-//             const { time, problem, ...quantities } = data; // Lấy các trường từ dữ liệu gửi lên
-//             const products = await db.Product.findAll(); // Lấy danh sách sản phẩm
+//             const { time, problem, quantities } = data; 
+            
+//             if (!Array.isArray(quantities) || quantities.length === 0) {
+//                 return resolve({ statusCode: 400, message: 'Số lượng không hợp lệ' });
+//             }
+
+//             const products = await db.Product.findAll(); 
 
 //             if (!products.length) {
 //                 return resolve({ statusCode: 404, message: 'Không tìm thấy sản phẩm' });
 //             }
 
-//             const salesPromises = products.map(async (product) => {
-//                 const quantityField = `quantity_${product.id}`; // Trường số lượng tương ứng với product_id
+//             const salesPromises = products.map(async (product, index) => {
+//                 const quantity = quantities[index]; 
 
-//                 if (quantities[quantityField]) {
+//                 if (quantity !== undefined) { 
 //                     await db.Sales.create({
 //                         userId,
 //                         product_id: product.id,
 //                         date: time,
-//                         quantity: quantities[quantityField],
+//                         quantity: quantity,
 //                         problem: problem || "",
 //                         createdAt: new Date(),
 //                         updatedAt: new Date(),
@@ -485,10 +489,22 @@ const handleServiceCreateSale = async (data, userId) => {
                 return resolve({ statusCode: 404, message: 'Không tìm thấy sản phẩm' });
             }
 
-            const salesPromises = products.map(async (product, index) => {
-                const quantity = quantities[index]; 
+            // Kiểm tra trước tồn kho
+            const insufficientStock = quantities.some((quantity, index) => {
+                const product = products[index];
+                return quantity > product.stock_level;
+            });
 
-                if (quantity !== undefined) { 
+            if (insufficientStock) {
+                return resolve({ statusCode: 400, message: 'không đủ tồn kho' });
+            }
+
+            // Tạo một danh sách các salesPromises
+            const salesPromises = quantities.map(async (quantity, index) => {
+                const product = products[index]; // Lấy sản phẩm tương ứng
+
+                if (quantity > 0) { // Chỉ xử lý số lượng lớn hơn 0
+                    // Tạo sale
                     await db.Sales.create({
                         userId,
                         product_id: product.id,
@@ -498,17 +514,26 @@ const handleServiceCreateSale = async (data, userId) => {
                         createdAt: new Date(),
                         updatedAt: new Date(),
                     });
+
+                    // Cập nhật stock_level
+                    const newStockLevel = product.stock_level - quantity;
+
+                    await db.Product.update(
+                        { stock_level: newStockLevel, updatedAt: new Date() }, 
+                        { where: { id: product.id } }
+                    );
                 }
             });
 
             await Promise.all(salesPromises);
             resolve({ statusCode: 2, message: 'Tạo báo cáo thành công' });
         } catch (error) {
-            console.error('Lỗi khi tạo báo cáo:', error);
+            console.error('Lỗi khi tạo báo cáo:', error.message);
             reject({ statusCode: 500, message: 'Lỗi khi tạo báo cáo: ' + error.message });
         }
     });
 };
+
 
 // const handleServiceGetAllSale = (userId, roleId) => {
 //     return new Promise(async (resolve, reject) => {
@@ -576,7 +601,7 @@ const handleServiceGetAllSale = (userId, roleId) => {
 
                 resolve({ statusCode: 2, data: salesReport.length > 0 ? salesReport : [] });
             } else {
-                resolve({ statusCode: 403, message: 'Không có quyền truy cập' });
+                resolve({ statusCode: 2, message: 'Không có quyền truy cập' });
             }
         } catch (error) {
             reject(error);

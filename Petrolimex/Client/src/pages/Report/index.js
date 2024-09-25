@@ -97,7 +97,7 @@ function Report() {
                 toast.error('Lỗi tạo báo cáo!');
             }
         } catch (error) {
-            toast.error('Có lỗi xảy ra từ server!');
+            toast.error('Tồn kho của sản phẩm không đủ!');
             console.error("Error:", error);
         }
     };
