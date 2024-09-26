@@ -110,3 +110,14 @@ export const apiEditProduct = (productId, editProduct) => {
 export const apiDeleteProduct = (productId) => {
     return api.delete(`/api-delete-product/${productId}`);
 };
+
+// Tìm kiếm Chấm công
+export const apiSearchTimekeeping = (searchType, value) => {
+    if (searchType === 'id') {
+        return api.get(`/api-search-timekeeping?searchType=id&userId=${value}`);
+    }
+    if (searchType === 'date') {
+        return api.get(`/api-search-timekeeping?searchType=date&date=${value}`);
+    }
+};
+

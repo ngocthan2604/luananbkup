@@ -26,7 +26,8 @@ import {
   handleGetAllProducts,
   handleCreateProduct,
   handleUpdateProduct, 
-  handleDeleteProduct 
+  handleDeleteProduct,
+  handleSearchTimekeeping 
 } from '../controllers/useController'
 
 ///// router
@@ -77,6 +78,8 @@ let initWebRoutes = (app) => {
   router.post('/api-create-product', useCheckErrorToken, handleCreateProduct);
   router.put('/api-update-product/:id', useCheckErrorToken, handleUpdateProduct);
   router.delete('/api-delete-product/:id', useCheckErrorToken, handleDeleteProduct);
+
+  router.get('/api-search-timekeeping', useCheckErrorToken, handleSearchTimekeeping);
 
   return app.use("/", router);
 };

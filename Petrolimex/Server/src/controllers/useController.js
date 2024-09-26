@@ -20,7 +20,8 @@ import {
     handleServiceGetAllProducts,
     handleServiceCreateProduct,
     handleServiceUpdateProduct,
-    handleServiceDeleteProduct
+    handleServiceDeleteProduct,
+    handleServiceSearchTimekeeping 
 } from '../services/useServices'
 
 const handleGetAllUser = async (req, res) => {
@@ -346,6 +347,21 @@ const handleDeleteProduct = async (req, res) => {
     }
 };
 
+// handle search timekeeping
+const handleSearchTimekeeping = async (req, res) => {
+    try {
+        const searchType = req.query.searchType; // Lấy searchType từ query parameters
+        const userId = req.query.userId; // Lấy userId từ query parameters
+        const date = req.query.date; // Lấy date từ query parameters
+
+        // Gọi service để tìm kiếm
+        const result = await handleServiceSearchTimekeeping(searchType, userId, date);
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error('Lỗi khi tìm kiếm chấm công:', error);
+        return res.status(500).json({ error: 'Đã xảy ra lỗi khi tìm kiếm chấm công.' });
+    }
+};
 
 module.exports = {
     handleGetAllUser,
@@ -371,5 +387,6 @@ module.exports = {
     handleGetAllProducts,
     handleCreateProduct,
     handleUpdateProduct,
-    handleDeleteProduct
+    handleDeleteProduct,
+    handleSearchTimekeeping
 }

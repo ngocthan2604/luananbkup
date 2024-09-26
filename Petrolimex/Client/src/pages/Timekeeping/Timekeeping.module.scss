@@ -35,3 +35,63 @@
     background-color: #04AA6D;
     color: white;
 }
+
+//search page css
+.searchData {
+    width: 70%;
+    gap: 10px;
+    padding: 10px;
+    display: flex;
+    border-radius: 8px;
+    align-items: center;
+    margin: 0 auto;
+    background-color: #f4f4f4;
+    justify-content: space-between;
+  }
+  
+  .searchInput {
+    padding: 8px 12px;
+    font-size: 16px;
+    border: 2px solid #04aa6d;
+    border-radius: 4px;
+    outline: none;
+    flex-grow: 1;
+    transition: border-color 0.3s;
+  }
+  
+  .searchInput:focus {
+    border-color: #037a52;
+  }
+  
+  .searchDropdown {
+    padding: 8px 12px;
+    font-size: 16px;
+    border: 2px solid #04aa6d;
+    border-radius: 4px;
+    outline: none;
+    background-color: white;
+  }
+  
+  .searchButton {
+    background-color: #04aa6d;
+    color: white;
+    padding: 10px 16px;
+    font-size: 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .searchButton:hover {
+    background-color: #037a52;
+  }
+  
+  .resetButton {
+    background-color: #ff3333; /* Màu đỏ cho nút "Xóa tìm kiếm" */
+  }
+  
+  .resetButton:hover {
+    background-color: #cc0000;
+  }
+  

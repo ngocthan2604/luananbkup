@@ -1,4 +1,5 @@
 const cron = require('node-cron');
+const { Op } = require('sequelize');
 
 import db from "../models/index";
 import {
@@ -661,6 +662,10 @@ const handleServiceResetSales = (timeRest) => {
         try {
             const timeInSeconds = parseInt(timeRest.TIME_RESET); // Chuyển đổi giá trị thời gian sang số nguyên
             if (timeRest.isResetting) {
+                if (resetJob) {
+                    resetJob.stop(); // Dừng job trước khi tạo mới
+                }
+
                 resetJob = cron.schedule(`*/${timeInSeconds} * * * * *`, async () => {
                     try {
                         await db.Sales.destroy({
@@ -950,6 +955,52 @@ const handleServiceDeleteProduct = async (id) => {
     });
 };
 
+//handle search timekeeping
+const handleServiceSearchTimekeeping = (searchType, userId, date) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let condition = {};
+
+            // Tìm kiếm theo userId
+            if (searchType === 'id') {
+                if (!userId) {
+                    return reject(new Error("userId không hợp lệ."));
+                }
+                condition.userId = userId; // Tìm theo userId
+            } 
+            // Tìm kiếm theo date
+            else if (searchType === 'date') {
+                if (!date) {
+                    return reject(new Error("date không hợp lệ."));
+                }
+
+                // Chuyển đổi date sang định dạng Date
+                const startDate = new Date(date);
+                const endDate = new Date(date);
+                endDate.setDate(endDate.getDate() + 1); // Thêm 1 ngày để so sánh
+
+                // Cập nhật condition để tìm kiếm theo createdAt
+                condition.createdAt = {
+                    [db.Sequelize.Op.gte]: startDate, // >= startDate
+                    [db.Sequelize.Op.lt]: endDate, // < endDate (ngày tiếp theo)
+                };
+            }else {
+                return reject(new Error("searchType không hợp lệ."));
+            }
+
+            // Thực hiện tìm kiếm
+            const timekeepingRecords = await db.Timekeeping.findAll({
+                where: condition,
+                order: [["id", "DESC"]],
+            });
+
+            resolve({ statusCode: 2, data: timekeepingRecords });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
 module.exports = {
     handleServiceGetAllUser,
     handleServiceLoginUser,
@@ -974,5 +1025,6 @@ module.exports = {
     handleServiceGetAllProducts,
     handleServiceCreateProduct,
     handleServiceUpdateProduct,
-    handleServiceDeleteProduct
+    handleServiceDeleteProduct,
+    handleServiceSearchTimekeeping
 }

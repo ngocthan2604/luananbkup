@@ -93,6 +93,7 @@ function Report() {
                 });
                 setOpen(false);  // Đóng modal sau khi thành công
                 reset(); // Reset form
+                setIsDataDeleted(false);
             } else {
                 toast.error('Lỗi tạo báo cáo!');
             }
@@ -191,24 +192,32 @@ function Report() {
     };              
 
     const ResetSales = async () => {
-        const response = await apiResetSales({ TIME_RESET, isResetting: true })
-        console.log(response)
-        if (response?.data?.statusCode === 2) {
-            setIsDataDeleted(true);
-            toast.success('Dữ liệu đã được làm mới!', {
-                position: "top-right",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "light",
-            });
-            const response = await apiResetSales({ TIME_RESET, isResetting: false })
+        try {
+            const response = await apiResetSales({ TIME_RESET, isResetting: true });
             console.log(response);
+            if (response?.data?.statusCode === 2) {
+                setIsDataDeleted(true); // Đặt thành true khi gọi API thành công
+                toast.success('Dữ liệu đã được làm mới!', {
+                    position: "top-right",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+                });
+                
+                const secondResponse = await apiResetSales({ TIME_RESET, isResetting: false });
+                console.log(secondResponse);
+            } else {
+                setIsDataDeleted(false); // Đặt thành false nếu statusCode không phải là 2
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            setIsDataDeleted(false); // Đặt thành false nếu có lỗi xảy ra
         }
-    }
+    };    
     
     return (
         <>

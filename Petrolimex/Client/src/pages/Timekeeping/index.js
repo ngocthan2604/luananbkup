@@ -4,7 +4,7 @@ import { Button } from "@mui/material";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useEffect, useState } from "react";
-import { apiGetProfileUser, apiCreateTimeKeeing, apiGetAllTimeKeeing } from "@/services/apis";
+import { apiGetProfileUser, apiCreateTimeKeeing, apiGetAllTimeKeeing,apiSearchTimekeeping } from "@/services/apis";
 
 function Timekeeping() {
 
@@ -14,7 +14,10 @@ function Timekeeping() {
     const [toastTitleStart, seTtoastTitleStart] = useState(null)
     const [toastTitleEnd, seTtoastTitleEnd] = useState(null)
     const [roleId, setRoleId] = useState(null)
-    const [listTimekeeing, setListTimeKeeing] = useState(null)
+    const [listTimekeeing, setListTimeKeeing] = useState([])
+    const [searchType, setSearchType] = useState('id')
+    const [searchValue, setSearchValue] = useState('')
+    const [searchResults, setSearchResults] = useState([])
 
 
     useEffect(() => {
@@ -35,6 +38,80 @@ function Timekeeping() {
             }
         })()
     }, [roleId])
+
+    const handleSearch = async () => {
+        let response;
+    
+        try {
+            // Gọi API dựa trên searchType
+            if (searchType === 'id') {
+                response = await apiSearchTimekeeping('id', searchValue);  // Gửi với id
+            } else if (searchType === 'date') {
+                response = await apiSearchTimekeeping('date', searchValue); // Gửi với date
+            } else {
+                toast.error('searchType không hợp lệ!', {
+                    position: "top-right",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "colored",
+                });
+                return;
+            }
+    
+            // Kiểm tra kết quả trả về từ API
+            if (response?.data?.statusCode === 2) {
+                setSearchResults(response?.data?.data || []); // Đảm bảo kết quả luôn là mảng
+                if (response?.data?.data.length === 0) {
+                    toast.error('Không có kết quả nào!', {
+                        position: "top-right",
+                        autoClose: 5000,
+                        hideProgressBar: false,
+                        closeOnClick: true,
+                        pauseOnHover: true,
+                        draggable: true,
+                        progress: undefined,
+                        theme: "colored",
+                    });
+                }
+            } else {
+                toast.error('Nhập đủ thông tin tìm kiếm!', {
+                    position: "top-right",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "colored",
+                });
+            }
+        } catch (error) {
+            console.error('Lỗi khi gọi API:', error);
+            toast.error('Nhập đủ thông tin tìm kiếm!', {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored",
+            });
+        }
+    };
+    
+
+    const handleResetSearch = async () => {
+        const response = await apiGetAllTimeKeeing(roleId);
+        if (response?.data?.statusCode === 2) {
+            setSearchResults(response?.data?.data || []);
+            setSearchValue('');
+        }
+    };
 
     const getTimeCurrentStart = () => {
         const currentTime = new Date();
@@ -149,6 +226,7 @@ function Timekeeping() {
 
         }
     }
+      
     return (
         <>
             <Header />
@@ -172,6 +250,42 @@ function Timekeeping() {
                 <Button variant="contained" disableElevation sx={{ fontSize: "18px" }} onClick={handleBtnTimeStart}>Giờ Vào</Button>
                 <Button variant="contained" color="success" sx={{ fontSize: "18px" }} onClick={handleBtnTimeEnd}>Giờ Ra</Button>
             </div>
+            
+            {roleId !== 'R0' && (
+                <div className={style.searchData}>
+                    <input
+                        type={searchType === 'id' ? 'number' : 'date'}
+                        placeholder={searchType === 'id' ? 'Nhập ID' : 'Chọn ngày tháng'}
+                        className={style.searchInput}
+                        value={searchValue}
+                        onChange={(e) => setSearchValue(e.target.value)}
+                    />
+
+                    <select
+                        id="searchType"
+                        className={style.searchDropdown}
+                        value={searchType}
+                        onChange={(e) => setSearchType(e.target.value)}
+                    >
+                        <option value="id">Tìm theo ID</option>
+                        <option value="date">Tìm theo ngày tháng</option>
+                    </select>
+
+                    <button className={style.searchButton} onClick={handleSearch}>
+                        Tìm kiếm
+                    </button>
+
+                    {searchResults.length > 0 && (
+                        <button
+                            id="resetButton"
+                            className={`${style.searchButton} ${style.resetButton}`}
+                            onClick={handleResetSearch}
+                        >
+                            Xóa tìm kiếm
+                        </button>
+                    )}
+                </div>
+            )}
 
             <table className={style.customers}>
                 {listTimekeeing &&
@@ -179,25 +293,15 @@ function Timekeeping() {
                         <tr>
                             <th>STT</th>
                             <th>Mã Nhân Viên</th>
-                            {/* <th>Full Name</th> */}
                             <th>Time</th>
-                            {/* <th>Type</th> */}
                         </tr>
-                        {
-                            listTimekeeing && listTimekeeing.map((timekeeing, index) => {
-                                return (
-                                    <tr key={timekeeing.id}>
-                                        <td>{index + 1}</td>
-                                        <td>{timekeeing.userId}</td>
-                                        {/* <td>{userData?.lastName}  {userData?.firstName}</td> */}
-                                        <td>{timekeeing.time}</td>
-                                        {/* <td>{timekeeing.type === 'start' ? 'Giờ Vào' : 'Giờ Ra'}</td> */}
-                                    </tr>
-                                )
-                            })
-
-                        }
-
+                        {(searchResults.length > 0 ? searchResults : listTimekeeing).map((item, index) => (
+                        <tr key={item.id}>
+                            <td>{index + 1}</td>
+                            <td>{item.userId}</td>
+                            <td>{item.time}</td>
+                        </tr>
+                        ))}
                     </tbody>
 
                 }
